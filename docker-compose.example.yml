@@ -1,0 +1,65 @@
+version: '3'
+
+services:
+  traefik:
+    image: traefik:v2.7
+    command:
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web-secure.address=:443"
+    ports:
+      - "80:80"
+      - "443:443"
+      - "8080:8080"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+
+  database:
+     image: "postgres:14.0-alpine"
+     ports:
+      - 5432:5432
+     environment:
+       - POSTGRES_USER=admin
+       - POSTGRES_PASSWORD=password
+       - POSTGRES_DB=users
+
+  chihuahua:
+    restart: unless-stopped
+    depends_on:
+      - database
+    build: 
+      context: ./
+      dockerfile: Dockerfile
+    labels:
+      - traefik.http.routers.chihuahua.rule=Path(`/auth/api/{case:[\/_a-z0-9]+}`)
+      - traefik.http.middlewares.auth-strip.stripprefix.prefixes=/auth/api
+      - traefik.http.routers.chihuahua.middlewares=auth-strip
+      - traefik.http.middlewares.chihuahua.forwardauth.address=http://chihuahua/verify
+      - traefik.http.middlewares.chihuahua.forwardauth.trustForwardHeader=true
+      - traefik.http.services.chihuahua.loadbalancer.server.port=80
+    environment:
+      - USER_DATABASE_URL=postgresql://admin:password@database/users
+      - ACCESS_COOKIE_DOMAIN=localhost 
+      - ACCESS_COOKIE_HTTPONLY=true
+      - ACCESS_COOKIE_NAME=chihuahua
+      - ACCESS_TOKEN_EXPIRE_MINUTES=60
+      - ADMIN_USER_PASSWORD=password
+      - JWT_TOKEN_SECRET=thisisatokenofmyappreciation
+      - BASE_URL=/auth/api
+
+  auth:
+    image: containous/whoami:latest
+    labels:
+      - traefik.http.routers.auth.rule=Path(`/auth`)
+    
+  dummy_service_1:
+    image: containous/whoami:latest
+    labels:
+      - traefik.http.routers.dummy_service_1.rule=Path(`/whoami`)
+      - traefik.http.routers.dummy_service_1.middlewares=chihuahua
+    depends_on:
+      - chihuahua
+  

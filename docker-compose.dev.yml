@@ -1,0 +1,47 @@
+version: '3'
+services:
+
+  traefik:
+    image: "traefik:v2.7"
+    command:
+      - "--log.level=INFO"
+      - "--api.insecure=true"
+      - "--api.dashboard=true"
+      - "--providers.docker=true"
+      - "--providers.docker.exposedbydefault=true"
+      - "--entrypoints.web.address=:80"
+      - "--entrypoints.web-secure.address=:443"
+      - "--providers.file.filename=/dev-service-config.yml"
+
+    ports:
+      - 80:80
+      - 443:443
+      - 8080:8080
+
+    volumes:
+      - "/var/run/docker.sock:/var/run/docker.sock:ro"
+      - "./dev-service-config.yml:/dev-service-config.yml"
+
+  dummy_service_1:
+    image: containous/whoami:latest
+    
+    labels:
+      - traefik.http.routers.dummy_service_1.rule=Path(`/whoami`)
+      - traefik.http.routers.dummy_service_1.middlewares=forward-auth@file
+
+  dummy_service_2:
+    image: containous/whoami:latest
+    
+    labels:
+      - traefik.http.routers.dummy_service_2.rule=Path(`/auth`)
+
+  
+  database:
+     image: "postgres:14.0-alpine"
+     ports:
+      - 5432:5432
+     environment:
+       - POSTGRES_USER=admin
+       - POSTGRES_PASSWORD=password
+       - POSTGRES_DB=users
+ 

@@ -1,0 +1,27 @@
+## Dynamic configuration
+http:
+  routers:
+    to-auth:
+      service: chihuahua
+      middlewares:
+        - "auth-api-strip"
+      rule: "Path(`/auth/api/{case:[a-z0-9/]+}`)"
+      #rule: "PathPrefix(`/auth/api`)"
+  
+  middlewares:
+    auth-api-strip:
+      stripPrefix:
+        prefixes:
+          - "/auth/api"
+
+    forward-auth:
+      forwardAuth:
+        address: "http://host.docker.internal:8000/verify"
+        trustForwardHeader: true
+
+  services:
+ 
+    chihuahua:
+      loadBalancer:
+        servers:
+          - url: "http://host.docker.internal:8000"
