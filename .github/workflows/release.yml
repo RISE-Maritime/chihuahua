@@ -18,11 +18,11 @@ jobs:
           registry: ghcr.io
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      - name: Build and push backend
+      - name: Build and push
         id: docker_build_backend
         uses: docker/build-push-action@v2
         with:
-          file: Dockerfile-backend
+          file: Dockerfile
           push: true
           tags: |
             ghcr.io/rise-maritime/chihuahua:latest

@@ -47,6 +47,7 @@ USER_DATABASE_URL = env("USER_DATABASE_URL")
 ADMIN_USER_USERNAME = env("ADMIN_USERNAME", "admin")
 ADMIN_USER_PASSWORD = env("ADMIN_USER_PASSWORD")
 BASE_URL = env("BASE_URL")
+REDIRECT_PATH = env("REDIRECT_PATH", "")
 
 # Setting up app and other context
 app = FastAPI(root_path=BASE_URL)
@@ -94,7 +95,8 @@ async def redirect_or_exception_handler(request: Request, exc: VerifyException):
     redirect_url = (
         "http://"
         + host
-        + "/auth?url="
+        + REDIRECT_PATH
+        + "?url="
         + parse.quote("http://" + host + uri)
         + "&message="
         + parse.quote(exc.message)

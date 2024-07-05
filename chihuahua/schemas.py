@@ -12,6 +12,11 @@ class Response(BaseModel):
     detail: str = None
 
 
+class LoginRequest(BaseModel):
+    username: str
+    password: str
+
+
 class CreateUser(BaseModel):
     username: str
     firstname: str
