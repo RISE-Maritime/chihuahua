@@ -20,7 +20,7 @@ from databases import Database
 from sqlalchemy import create_engine, text, inspect
 from starlette.responses import RedirectResponse
 
-# pylint: disable=import-error, relative-beyond-top-level, no-name-in-module
+# pylint: disable=import-error, relative-beyond-top-level, no-name-in-module, broad-exception-raised
 from . import schemas
 from . import models
 from .oauth2_password_bearer_cookie import OAuth2PasswordBearerOrCookie
@@ -165,8 +165,6 @@ async def verify_token_admin(
     if not user.admin:
         raise HTTPException(status_code=401, detail="Unauthorized access")
 
-# This line builds a dictionary with the column names as keys and their attributes from the models.py
-
 
 @app.on_event("startup")
 async def startup():
@@ -183,14 +181,21 @@ async def startup():
 
     if user_table_exists:
         # Get the list of columns in the 'users' table
-        existing_columns = {col['name'] for col in inspector.get_columns("users")}
-        
+        existing_columns = {col["name"] for col in inspector.get_columns("users")}
+
         # Compare with the columns_dict derived from the User model
-        columns_dict = {column.name: getattr(models.User, column.name) for column in models.User.__table__.columns}
+        columns_dict = {
+            column.name: getattr(models.User, column.name)
+            for column in models.User.__table__.columns
+        }
 
         if not set(columns_dict.keys()).issubset(existing_columns):
-            # If the existing table doesn't have the necessary columns, raise an error or handle accordingly
-            raise Exception("The existing 'users' table does not have the necessary columns.")
+            # If the existing table doesn't have the necessary columns,
+            # raise an error or handle accordingly
+            raise Exception(
+                """The existing 'users' table does not have the 
+                necessary columns."""
+            )
     else:
         # If the 'users' table does not exist, create all tables
         models.Base.metadata.create_all(engine)
