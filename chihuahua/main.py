@@ -17,7 +17,7 @@ from jose.exceptions import JWTError, ExpiredSignatureError, JWTClaimsError
 import bcrypt
 from environs import Env
 from databases import Database
-from sqlalchemy import create_engine, text
+from sqlalchemy import create_engine, text, inspect
 from starlette.responses import RedirectResponse
 
 # pylint: disable=import-error, relative-beyond-top-level, no-name-in-module
@@ -165,13 +165,35 @@ async def verify_token_admin(
     if not user.admin:
         raise HTTPException(status_code=401, detail="Unauthorized access")
 
+# This line builds a dictionary with the column names as keys and their attributes from the models.py
+
 
 @app.on_event("startup")
 async def startup():
     """Run during startup of this application"""
 
-    # Database initial setup using sqlalchemy
-    models.Base.metadata.create_all(create_engine(USER_DATABASE_URL))
+    # Database engine setup
+    engine = create_engine(USER_DATABASE_URL)
+
+    # Inspector to check for table and columns
+    inspector = inspect(engine)
+
+    # Check if the 'users' table exists and has the correct columns
+    user_table_exists = inspector.has_table("users")
+
+    if user_table_exists:
+        # Get the list of columns in the 'users' table
+        existing_columns = {col['name'] for col in inspector.get_columns("users")}
+        
+        # Compare with the columns_dict derived from the User model
+        columns_dict = {column.name: getattr(models.User, column.name) for column in models.User.__table__.columns}
+
+        if not set(columns_dict.keys()).issubset(existing_columns):
+            # If the existing table doesn't have the necessary columns, raise an error or handle accordingly
+            raise Exception("The existing 'users' table does not have the necessary columns.")
+    else:
+        # If the 'users' table does not exist, create all tables
+        models.Base.metadata.create_all(engine)
 
     # Connect with actual connection we will use from here on forwards
     await database.connect()
