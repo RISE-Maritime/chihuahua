@@ -1,4 +1,3 @@
-
 <img src="chihuahua-logo.png" alt="drawing" width="100"/>
 
 # Chihuahua

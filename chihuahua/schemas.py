@@ -12,45 +12,45 @@ class Response(BaseModel):
     detail: str = None
 
 
-class LoginRequest(BaseModel):
-    username: str
-    password: str
+# class LoginRequest(BaseModel):
+#     email: str
+#     password: str
 
 
-class CreateUser(BaseModel):
-    username: str
-    firstname: str
-    lastname: str
-    email: str
-    password: str
-    admin: bool
+# class CreateUser(BaseModel):
+#     username: str
+#     firstname: str
+#     lastname: str
+#     email: str
+#     password: str
+#     admin: bool
 
-    class Config:
-        from_attributes = True
-
-
-class UserOut(BaseModel):
-    id: int
-    username: str
-    firstname: str
-    lastname: str
-    email: str
-    admin: bool
-
-    class Config:
-        from_attributes = True
+#     class Config:
+#         from_attributes = True
 
 
-class ModifyUser(BaseModel):
-    firstname: str = None
-    lastname: str = None
-    email: str = None
-    password: str = None
-    admin: bool = None
+# class UserOut(BaseModel):
+#     id: int
+#     username: str
+#     firstname: str
+#     lastname: str
+#     email: str
+#     admin: bool
 
-    @model_validator(mode="before")
-    @classmethod
-    def check_at_least_one(cls, values):
-        if all([value is None for value in values.values()]):
-            raise ValueError("The request body should contain at least one field.")
-        return values
+#     class Config:
+#         from_attributes = True
+
+
+# class ModifyUser(BaseModel):
+#     firstname: str = None
+#     lastname: str = None
+#     email: str = None
+#     password: str = None
+#     admin: bool = None
+
+#     @model_validator(mode="before")
+#     @classmethod
+#     def check_at_least_one(cls, values):
+#         if all([value is None for value in values.values()]):
+#             raise ValueError("The request body should contain at least one field.")
+#         return values

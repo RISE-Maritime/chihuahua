@@ -20,7 +20,7 @@ def test_access_and_authentication():
     assert params["url"][0] == "http://localhost/whoami"
     assert params["message"][0] == "Login necessary"
 
-    # A login request with non-existing username ...
+    # A login request with non-existing email ...
     response = requests.post(
         "http://localhost/auth/api/login", {"username": "foo", "password": "foo"}
     )
