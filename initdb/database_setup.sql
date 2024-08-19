@@ -4,21 +4,21 @@ BEGIN
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'normal_user') THEN
         CREATE ROLE normal_user NOLOGIN;
         GRANT USAGE ON SCHEMA public TO normal_user;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO normal_user;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO normal_user;
+        -- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO normal_user;
+        -- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO normal_user;
         ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, USAGE ON SEQUENCES TO normal_user;
-        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO normal_user;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO normal_user;
+        -- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO normal_user;
+        -- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO normal_user;
     END IF;
 
     IF NOT EXISTS (SELECT FROM pg_roles WHERE rolname = 'admin_user') THEN
         CREATE ROLE admin_user NOLOGIN;
         GRANT USAGE ON SCHEMA public TO admin_user;
-        GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO admin_user;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO admin_user;
+        -- GRANT SELECT, INSERT, UPDATE, DELETE ON ALL TABLES IN SCHEMA public TO admin_user;
+        -- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO admin_user;
         ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT SELECT, USAGE ON SEQUENCES TO admin_user;
-        GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO admin_user;
-        ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO admin_user;
+        -- GRANT EXECUTE ON ALL FUNCTIONS IN SCHEMA public TO admin_user;
+        -- ALTER DEFAULT PRIVILEGES IN SCHEMA public GRANT EXECUTE ON FUNCTIONS TO admin_user;
     END IF;
 END $$;
 
@@ -71,56 +71,26 @@ BEFORE UPDATE ON users
 FOR EACH ROW
 EXECUTE FUNCTION update_last_updated();
 
-
-
 -- Special configuration for 'users' table
-ALTER TABLE users ENABLE ROW LEVEL SECURITY;
-
-CREATE OR REPLACE FUNCTION log_jwt_claims()
-RETURNS void AS $$
-DECLARE
-    claims json;
-    email text;
-BEGIN
-    -- Fetch the JWT claims
-    claims := current_setting('request.jwt.claims', true)::json;
-
-    -- Extract specific claims
-    email := claims->>'sub';
-
-    -- Log the extracted claims
-    RAISE NOTICE 'JWT Claims: %', claims;
-    RAISE NOTICE 'Email from JWT: %', email;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE OR REPLACE FUNCTION trigger_log_jwt_claims()
-RETURNS TRIGGER AS $$
-BEGIN
-    PERFORM log_jwt_claims();
-    RETURN NEW;
-END;
-$$ LANGUAGE plpgsql;
-
-CREATE TRIGGER log_jwt_trigger
-BEFORE INSERT OR UPDATE ON users
-FOR EACH ROW EXECUTE FUNCTION trigger_log_jwt_claims();
-
--- Administrator can see all rows and add any rows
-CREATE POLICY admin_all ON users TO admin_user USING (true) WITH CHECK (true);
--- Normal users can view all rows
-CREATE POLICY all_view ON users FOR SELECT;
--- Normal users can update their own records, but
-CREATE POLICY user_mod ON users FOR UPDATE 
-  USING (email = (current_setting('request.jwt.claims', true)::json->>'sub')) 
-  WITH CHECK (email = (current_setting('request.jwt.claims', true)::json->>'sub'));
-
--- Allow admin all normal rights
 GRANT SELECT, INSERT, UPDATE, DELETE ON users TO admin_user;
+GRANT SELECT ON users TO normal_user;
 
--- CREATE VIEW users_public AS
--- SELECT email, created_at
--- FROM users;
+GRANT SELECT, INSERT, UPDATE, DELETE ON comments TO admin_user;
+GRANT SELECT, INSERT, UPDATE, DELETE ON comments TO normal_user;
 
--- GRANT SELECT ON users_public TO normal_user;
+-- Row Level security (in progress)
+-- ALTER TABLE users ENABLE ROW LEVEL SECURITY;
+-- -- Administrator can see all rows and add any rows
+-- CREATE POLICY admin_all ON users TO admin_user USING (true) WITH CHECK (true);
+-- -- Normal users can view all rows
+-- CREATE POLICY all_view ON users FOR SELECT TO normal_user ;
+-- -- Normal users can update their own records, but
+-- CREATE POLICY user_mod ON users FOR UPDATE TO normal_user
+--   USING (email = current_setting('request.jwt.claims', true)::json->>'sub');
 
+CREATE OR REPLACE FUNCTION get_jwt_claims()
+RETURNS TEXT AS $$
+BEGIN
+    RETURN current_setting('request.jwt.claims', true)::json;
+END;
+$$ LANGUAGE plpgsql;

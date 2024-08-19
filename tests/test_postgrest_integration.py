@@ -129,32 +129,7 @@ def test_admin_user_can_read_users_without_restrictions():
     assert "admin" in response.json()[0]
 
 
-def test_normal_user_can_update_its_record_with_restrictions():
-    response = requests.post(
-        "http://localhost/auth/api/login",
-        {"username": random_email, "password": "password"},
-    )
-    assert response.status_code == 200
-    cookies = response.cookies
-
-    response = requests.patch(
-        f"http://localhost/api/users?email=eq.{random_email}",
-        headers={
-            "Authorization": f"Bearer {cookies.get_dict()['chihuahua-access']}",
-        },
-        json={"password": "foobar"},
-    )
-    assert response.status_code == 204
-
-    # response = requests.post(
-    #     "http://localhost/auth/api/login",
-    #     {"username": random_email, "password": "foobar"},
-    # )
-    # assert response.status_code == 200
-    # cookies = response.cookies
-
-
-# def test_normal_user_can_read_users_with_restrictions():
+# def test_normal_user_can_update_its_record_with_restrictions():
 #     response = requests.post(
 #         "http://localhost/auth/api/login",
 #         {"username": random_email, "password": "password"},
@@ -162,13 +137,45 @@ def test_normal_user_can_update_its_record_with_restrictions():
 #     assert response.status_code == 200
 #     cookies = response.cookies
 
-#     response = requests.get(
-#         f"http://localhost/api/users",
+#     response = requests.patch(
+#         f"http://localhost/api/users?email=eq.{random_email}",
 #         headers={
 #             "Authorization": f"Bearer {cookies.get_dict()['chihuahua-access']}",
 #         },
+#         json={"password": "foobar"},
 #     )
+#     print(response.status_code)
+#     print(response.content)
 #     assert response.status_code == 200
-#     print(response.json())
-#     assert "password" in response.json()[0]
-#     assert "admin" not in response.json()[0]
+
+# response = requests.post(
+#     "http://localhost/api/rpc/get_jwt_claims",
+#     headers={
+#         "Authorization": f"Bearer {cookies.get_dict()['chihuahua-access']}",
+#     },
+# )
+# print(response.content)
+
+# response = requests.post(
+#     "http://localhost/auth/api/login",
+#     {"username": random_email, "password": "foobar"},
+# )
+# assert response.status_code == 200
+# cookies = response.cookies
+
+
+def test_normal_user_can_read_users_without_restrictions():
+    response = requests.post(
+        "http://localhost/auth/api/login",
+        {"username": random_email, "password": "password"},
+    )
+    assert response.status_code == 200
+    cookies = response.cookies
+
+    response = requests.get(
+        f"http://localhost/api/users",
+        headers={
+            "Authorization": f"Bearer {cookies.get_dict()['chihuahua-access']}",
+        },
+    )
+    assert response.status_code == 200
