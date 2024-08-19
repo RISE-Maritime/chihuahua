@@ -100,7 +100,7 @@ def test_normal_user_cannot_create_users():
         "http://localhost/api/users",
         json={
             "password": "password",
-            "email": "foo" + random_email,
+            "email": "foo-" + random_email,
             "admin": False,
         },
         headers={
